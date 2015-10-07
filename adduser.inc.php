@@ -1,209 +1,131 @@
 <?php
-
-
-$con = mysql_connect(DATABASE_HOST, DATABASE_USERNAME, DATABASE_PASSWORD) or die('Could not connect to server');
-
-
-if (!$con)
-
-
+/*Trying to play with
+* PDO
+*/
+include_once('dbconfig.php');
+if (!$db_con)
 {
-
-
-   echo "<h2>Sorry, we cannot process your request at this time, please try again later</h2>\n";
-
-
-   echo "<a href=\"index.php?content=register\">Try again</a><br>\n";
-
-
-   echo "<a href=\"index.php\">Return to Home</a>\n";
-
-
-   exit;
-
-
+    echo "sorry, there is no connection with the DB";
+    echo "<a href=\"index.php?content=register\">Try again</a><br>\n";
+    echo "<a href=\"index.php\">Return to Home</a>\n";
+    exit;
 }
 
-
-mysql_select_db(DATABASE_NAME) or die('Could not connect to database');
-
-
-$userid = $_POST['userid'];
-
-
-$password = $_POST['password'];
-
-
-$password2 = $_POST['password2'];
-
-
-$fullname = $_POST['fullname'];
-
-
+    echo "connectedss";
+$username = $_POST['username'];
+$firstname = $_POST['firstname'];
+$lastname = $_POST['lastname'];
 $email = $_POST['email'];
-
-
+$password = $_POST['password'];
+$password2 = $_POST['password2'];
 $baduser = 0;
-
-
-// Check if userdid was entered
-
-
-if (trim($userid) == '')
-
-
+if (trim($username) == '')
 {
-
 
    echo "<h2>Sorry, you must enter a user name.</h2><br>\n";
-
-
    echo "<a href=\"index.php?content=register\">Try again</a><br>\n";
-
-
    echo "<a href=\"index.php\">Return to Home</a>\n";
-
-
    $baduser = 1;
-
-
 }
-
-
-//Check if password was entered
-
-
 if (trim($password) == '')
-
-
 {
-
-
-   echo "<h2>Sorry, you must enter a password.</h2><br>\n";
-
-
+   echo "<h2>Sorry, you must enter a password</h2><br>\n";
    echo "<a href=\"index.php?content=register\">Try again</a><br>\n";
-
-
    echo "<a href=\"index.php\">Return to Home</a>\n";
-
-
    $baduser = 1;
-
-
 }
-
-
-//Check if password and confirm password match
-
-
 if ($password != $password2)
-
-
 {
-
-
-   echo "<h2>Sorry, the passwords you entered did not match.</h2><br>\n";
-
-
+   echo "<h2>Sorry, you must enter a password</h2><br>\n";
    echo "<a href=\"index.php?content=register\">Try again</a><br>\n";
-
-
    echo "<a href=\"index.php\">Return to Home</a>\n";
-
-
    $baduser = 1;
-
-
-}
-
-
-//Check if userid is already in database
-
-
-$query = "SELECT userid from users where userid = '$userid'";
-
-
-$result = mysql_query($query);
-
-
-$row = mysql_fetch_array($result, MYSQL_ASSOC);
-
-
-if ($row['userid'] == $userid)
-
-
+} 
+try
 {
-
-
-   echo "<h2>Sorry, that user name is already taken.</h2><br>\n";
-
-
-   echo "<a href=\"index.php?content=register\">Try again</a><br>\n";
-
-
-   echo "<a href=\"index.php\">Return to Home</a>\n";
-
-
-   $baduser = 1;
-
-
+    $query = $db_con->prepare("SELECT username FROM user WHERE username == '$username'");
+    $row = $query->fetch(PDO::FETCH_ASSOC);
+    //check if there are registered users with $username OR $email
+        if (
+            //Returns the number of rows affected by the last SQL (PDO::rowCount)
+            $query->rowCount() > 0 )
+       {
+        echo "username $username is taken";
+        echo "<a href=\"index.php?content=register\">Try again</a><br>\n";
+        echo "<a href=\"index.php\">Return to Home</a>\n";
+        $baduser = 1;
+    }
 }
+    catch(PDOException $e)
+        {
+            echo $e->getMessage();
+        }
 
-
-if ($baduser != 1)
-
-
+if ($baduser!=1)
+    try
 {
-
-
-   //Everything passed, enter userid in database
-
-
-   $query = "INSERT into users VALUES ('$userid', PASSWORD('$password'), '$fullname', '$email')";
-
-
-   $result = mysql_query($query) or die('Sorry, we are unable to process your request.');
-
-
-   if ($result)
-
-
-   {
-
-
-      $_SESSION['valid_recipe_user'] = $userid;
-
-
-      echo "<h2>Your registration request has been approved and you are now logged in!</h2>\n";
-
-
-      echo "<a href=\"index.php\">Return to Home</a>\n";
-
-
-      exit;
-
-
-   } else
-
-
-   {
-
-
-      echo "<h2>Sorry, there was a problem processing your login request</h2><br>\n";
-
-
-      echo "<a href=\"index.php?content=register\">Try again</a><br>\n";
-
-
-      echo "<a href=\"index.php\">Return to Home</a>\n";
-
-
-   }
-
-
+    $query1 = "INSERT INTO user (firstname, lastname, email, username, password) VALUES ('$firstname', '$lastname', '$email', '$username', PASSWORD('$password'))";
+    // use exec() because no results are returned
+    $db_con->exec($query1);  
+    echo "New record created successfully";                                  
 }
-
-
+    catch(PDOException $e)
+        {
+            echo $e->getMessage();
+        }
 ?>
+<h3>Join the fun!!</h3>
 
+
+<p>Register at Recipe Center to share your recipes and comments with others</p>
+
+
+<h3>Please enter the following information</h3>
+
+
+<form action="index.php" method="post">
+
+
+<b>User Name:</b><br><input type="text" name="userid"><br>
+
+
+<br />
+
+
+<b>Password:</b><br><input type="password" name="password"><br>
+
+
+<br />
+
+
+<font size="1">Confirm Password:</font><br /> 
+
+
+<input type="password" name="password2"><br>
+
+
+<br />
+
+
+<b>Full name:</b><br><input type="text" size="40" name="fullname"><br>
+
+
+<br />
+
+
+<b>E-mail address:</b><br><input type="text" size="50" name="email">
+
+
+<p>Privacy Policy: we do not share e-mail addresses with others</p>
+
+
+<input type="submit" value="Submit">
+
+
+<input type="hidden" name="content" value="adduser">
+
+
+<hr size="1" noshade="noshade">
+
+
+</form>
